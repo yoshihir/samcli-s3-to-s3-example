@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam-app
+  
+  Sample SAM Template for sam-app
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 5
+
+#Parameters:
+#  BucketNameParameter:
+#    Description: Name of S3 bucket
+#    Type: String
+#    BuketName: aaaaaaaa
+
+Resources:
+  MainFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/main
+      Runtime: go1.x
+      CodeUri: .
+      FunctionName: main
+      Description: >-
+        An Amazon S3 trigger that retrieves metadata for the object that has
+        been updated.
+      MemorySize: 128
+#      Policies:
+#      - S3CrudPolicy:
+#          BucketName: !Ref BucketNameParameter
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket: !Ref TestBucket
+            Events:
+            - 's3:ObjectCreated:Put'
+
+  TestBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: "test-bucket"
+
