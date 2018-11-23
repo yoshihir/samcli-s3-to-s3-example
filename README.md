@@ -1,0 +1,1 @@
+# samcli-s3-to-s3-example
