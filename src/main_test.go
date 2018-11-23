@@ -10,8 +10,18 @@ import (
 	"testing"
 )
 
+func TestMain(m *testing.M) {
+	println("before all...")
+
+	code := m.Run()
+
+	println("after all...")
+
+	os.Exit(code)
+}
+
 func TestHandler(t *testing.T) {
-	t.Run("やっほー", func(t *testing.T) {
+	t.Run("handler input test", func(t *testing.T) {
 		raw, err := ioutil.ReadFile("../event_file.json")
 		if err != nil {
 			fmt.Println(err.Error())
@@ -19,16 +29,13 @@ func TestHandler(t *testing.T) {
 		}
 		var event events.S3Event
 		json.Unmarshal(raw, &event)
-
-
-
-
-
 		err = handler(context.Background(), event)
 		if err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
+
+		println("Test Handler...")
 	})
 
 	//
