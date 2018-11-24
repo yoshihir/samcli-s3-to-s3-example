@@ -38,6 +38,11 @@ Resources:
             Bucket: !Ref TestBucket
             Events:
             - 's3:ObjectCreated:Put'
+      Environment:
+        Variables:
+          REGION: "ap-northeast-1"
+          S3_ENDPOINT: "http://localhost:4572"
+
 
   TestBucket:
     Type: 'AWS::S3::Bucket'

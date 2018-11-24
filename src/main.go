@@ -1,7 +1,9 @@
 package main
 
 import (
+	"compress/gzip"
 	"context"
+	"encoding/json"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -12,8 +14,27 @@ import (
 	"os"
 )
 
-func handler(ctx context.Context, req events.S3Event) error {
-	return nil
+type SampleData struct {
+	Id    int    `json:"id"`
+	Value string `json:"value"`
+}
+
+func extract(file *os.File) ([]SampleData, error) {
+	gzipReader, _ := gzip.NewReader(file)
+	defer gzipReader.Close()
+
+	raw, err := ioutil.ReadAll(gzipReader)
+	if err != nil {
+		println(err.Error())
+	}
+
+	var data []SampleData
+	err = json.Unmarshal(raw, &data)
+	if err != nil {
+		println(err.Error())
+	}
+
+	return data, nil
 }
 
 func s3Download(bucket string, key string) (f *os.File, err error) {
@@ -40,6 +61,10 @@ func s3Download(bucket string, key string) (f *os.File, err error) {
 	}
 
 	return tmpfile, err
+}
+
+func handler(ctx context.Context, req events.S3Event) error {
+	return nil
 }
 
 func main() {
