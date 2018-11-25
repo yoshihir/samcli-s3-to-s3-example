@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestMain(m *testing.M) {
@@ -88,7 +89,7 @@ func TestHandler(t *testing.T) {
 		if err != nil {
 			t.Fatal("Error failed to s3 event")
 		}
-		println("Test Handler...")
+		println("Test handler...")
 	})
 }
 
@@ -101,7 +102,7 @@ func TestS3Download(t *testing.T) {
 		if tmpFile.Name() == "" {
 			t.Errorf("got: %v\nwant: %v", "", "/tmp/srctmp_*********")
 		}
-		println("Test S3Download...")
+		println("Test s3Download...")
 	})
 }
 
@@ -118,60 +119,37 @@ func TestExtract(t *testing.T) {
 			t.Errorf("got: %v\nwant: %v", actual[0].Value, expected)
 		}
 		println("Test extract...")
-
 	})
 }
 
-//
-//
-//t.Run("Unable to get IP", func(t *testing.T) {
-//	DefaultHTTPGetAddress = "http://127.0.0.1:12345"
-//
-//	_, err := handler(events.APIGatewayProxyRequest{})
-//	if err == nil {
-//		t.Fatal("Error failed to trigger with an invalid request")
-//	}
-//})
-//
-//t.Run("Non 200 Response", func(t *testing.T) {
-//	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//		w.WriteHeader(500)
-//	}))
-//	defer ts.Close()
-//
-//	DefaultHTTPGetAddress = ts.URL
-//
-//	_, err := handler(events.APIGatewayProxyRequest{})
-//	if err != nil && err.Error() != ErrNon200Response.Error() {
-//		t.Fatalf("Error failed to trigger with an invalid HTTP response: %v", err)
-//	}
-//})
-//
-//t.Run("Unable decode IP", func(t *testing.T) {
-//	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//		w.WriteHeader(500)
-//	}))
-//	defer ts.Close()
-//
-//	DefaultHTTPGetAddress = ts.URL
-//
-//	_, err := handler(events.APIGatewayProxyRequest{})
-//	if err == nil {
-//		t.Fatal("Error failed to trigger with an invalid HTTP response")
-//	}
-//})
-//
-//t.Run("Successful Request", func(t *testing.T) {
-//	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//		w.WriteHeader(200)
-//		fmt.Fprintf(w, "127.0.0.1")
-//	}))
-//	defer ts.Close()
-//
-//	DefaultHTTPGetAddress = ts.URL
-//
-//	_, err := handler(events.APIGatewayProxyRequest{})
-//	if err != nil {
-//		t.Fatal("Everything should be ok")
-//	}
-//})
+func TestConvert(t *testing.T) {
+	t.Run("convert", func(t *testing.T) {
+		data := []SampleData{{12345678, "abcdefgh"}}
+		expected := time.Now().String()
+
+		convertData, err := convert(data, expected)
+		if err != nil {
+			t.Fatal("Error failed to convert")
+		}
+		if convertData[0].Time != expected {
+			t.Errorf("got: %v\nwant: %v", convertData[0].Time, expected)
+		}
+
+		println("Test convert...")
+	})
+}
+
+func TestCompress(t *testing.T) {
+	t.Run("compress", func(t *testing.T) {
+		data := []SampleConvertData{
+			{12345678, "abcdefgh", time.Now().String()},
+			{23456781, "bcdefgha", time.Now().String()}}
+		_, err := compress(data)
+		if err != nil {
+			t.Fatal("Error failed to compress")
+		}
+
+		// ここのtestは誰かに相談する
+		println("Test compress...")
+	})
+}

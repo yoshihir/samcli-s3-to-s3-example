@@ -19,6 +19,37 @@ type SampleData struct {
 	Value string `json:"value"`
 }
 
+type SampleConvertData struct {
+	Id    int    `json:"id"`
+	Value string `json:"value"`
+	Time  string `json:"time"`
+}
+
+func compress(convertData []SampleConvertData) (*os.File, error) {
+	b, _ := json.Marshal(convertData)
+
+	tmpfile, _ := ioutil.TempFile("/tmp", "srctmp_")
+	defer os.Remove(tmpfile.Name())
+
+	writer := gzip.NewWriter(tmpfile)
+	writer.Write([]byte(b))
+	writer.Close()
+
+	return tmpfile, nil
+}
+
+func convert(data []SampleData, time string) ([]SampleConvertData, error) {
+	var dataConvert []SampleConvertData
+	for _, d := range data {
+		dataConvert = append(dataConvert, SampleConvertData{
+			Id:    d.Id,
+			Value: d.Value,
+			Time:  time,
+		})
+	}
+	return dataConvert, nil
+}
+
 func extract(file *os.File) ([]SampleData, error) {
 	gzipReader, _ := gzip.NewReader(file)
 	defer gzipReader.Close()
