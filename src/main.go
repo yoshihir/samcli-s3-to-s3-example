@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 type SampleData struct {
@@ -26,7 +27,7 @@ type SampleConvertData struct {
 	Time  string `json:"time"`
 }
 
-func s3Upload(file *os.File) error {
+func s3Upload(file *os.File) (*s3manager.UploadOutput, error) {
 	var sess = session.Must(session.NewSession(&aws.Config{
 		S3ForcePathStyle: aws.Bool(true),
 		Region:           aws.String(os.Getenv("REGION")),
@@ -35,17 +36,17 @@ func s3Upload(file *os.File) error {
 
 	var uploader = s3manager.NewUploader(sess)
 
-	_, err := uploader.Upload(&s3manager.UploadInput{
+	result, err := uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String("bucket-example-convert"),
 		Key:    aws.String("example-convert.json.gz"),
 		Body:   file,
 	})
 	if err != nil {
 		fmt.Println("failed to upload file")
-		return err
+		return nil, err
 	}
 
-	return nil
+	return result, err
 }
 
 func compress(convertData []SampleConvertData) (*os.File, error) {
@@ -88,7 +89,7 @@ func extract(file *os.File) ([]SampleData, error) {
 		fmt.Println(err.Error())
 	}
 
-	return data, nil
+	return data, err
 }
 
 func s3Download(bucket string, key string) (f *os.File, err error) {
@@ -118,6 +119,19 @@ func s3Download(bucket string, key string) (f *os.File, err error) {
 }
 
 func handler(ctx context.Context, req events.S3Event) error {
+	bucketName := req.Records[0].S3.Bucket.Name
+	key := req.Records[0].S3.Object.Key
+	file, err := s3Download(bucketName, key)
+	if err != nil {
+		fmt.Println("Error failed to s3 download")
+		return err
+	}
+	data, err := extract(file)
+	time := time.Now().String()
+	convertData, err := convert(data, time)
+	gzFile, err := compress(convertData)
+	_, err = s3Upload(gzFile)
+
 	return nil
 }
 

@@ -99,12 +99,13 @@ func TestS3Upload(t *testing.T) {
 	t.Run("upload", func(t *testing.T) {
 		tmpfile, _ := ioutil.TempFile("/tmp", "srctmp_")
 		defer os.Remove(tmpfile.Name())
-		err := s3Upload(tmpfile)
+		result, err := s3Upload(tmpfile)
 		if err != nil {
 			t.Fatal("Error failed to s3upload")
 		}
-
-		// TODO assert equalsを書く
+		if result.Location == "" {
+			t.Errorf("got: %v\nwant: %v", result.UploadID, "")
+		}
 
 		fmt.Println("Test s3upload...")
 	})
