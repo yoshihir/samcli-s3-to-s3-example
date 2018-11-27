@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -23,6 +24,28 @@ type SampleConvertData struct {
 	Id    int    `json:"id"`
 	Value string `json:"value"`
 	Time  string `json:"time"`
+}
+
+func s3Upload(file *os.File) error {
+	var sess = session.Must(session.NewSession(&aws.Config{
+		S3ForcePathStyle: aws.Bool(true),
+		Region:           aws.String(os.Getenv("REGION")),
+		Endpoint:         aws.String(os.Getenv("S3_ENDPOINT")),
+	}))
+
+	var uploader = s3manager.NewUploader(sess)
+
+	_, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String("bucket-example-convert"),
+		Key:    aws.String("example-convert.json.gz"),
+		Body:   file,
+	})
+	if err != nil {
+		fmt.Println("failed to upload file")
+		return err
+	}
+
+	return nil
 }
 
 func compress(convertData []SampleConvertData) (*os.File, error) {
@@ -56,13 +79,13 @@ func extract(file *os.File) ([]SampleData, error) {
 
 	raw, err := ioutil.ReadAll(gzipReader)
 	if err != nil {
-		println(err.Error())
+		fmt.Println(err.Error())
 	}
 
 	var data []SampleData
 	err = json.Unmarshal(raw, &data)
 	if err != nil {
-		println(err.Error())
+		fmt.Println(err.Error())
 	}
 
 	return data, nil
@@ -88,7 +111,7 @@ func s3Download(bucket string, key string) (f *os.File, err error) {
 			Key:    aws.String(key),
 		})
 	if err != nil {
-		println("file download error")
+		fmt.Println("file download error")
 	}
 
 	return tmpfile, err

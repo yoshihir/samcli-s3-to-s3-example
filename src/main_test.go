@@ -31,11 +31,29 @@ func TestMain(m *testing.M) {
 	var creater = s3.New(sess)
 	var uploader = s3manager.NewUploader(sess)
 
-	input := &s3.CreateBucketInput{
+	_, err := creater.CreateBucket(&s3.CreateBucketInput{
 		Bucket: aws.String("bucket-example"),
-	}
+	})
 
-	_, err := creater.CreateBucket(input)
+	if err != nil {
+		//if aerr, ok := err.(awserr.Error); ok {
+		//	switch aerr.Code() {
+		//	case s3.ErrCodeBucketAlreadyExists:
+		//		fmt.Println(s3.ErrCodeBucketAlreadyExists, aerr.Error())
+		//	case s3.ErrCodeBucketAlreadyOwnedByYou:
+		//		fmt.Println(s3.ErrCodeBucketAlreadyOwnedByYou, aerr.Error())
+		//	default:
+		//		fmt.Println(aerr.Error())
+		//	}
+		//} else {
+		//	fmt.Println(err.Error())
+		//}
+		//return
+	}
+	_, err = creater.CreateBucket(&s3.CreateBucketInput{
+		Bucket: aws.String("bucket-example-convert"),
+	})
+
 	if err != nil {
 		//if aerr, ok := err.(awserr.Error); ok {
 		//	switch aerr.Code() {
@@ -77,48 +95,33 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestHandler(t *testing.T) {
-	t.Run("handler input test", func(t *testing.T) {
-		raw, err := ioutil.ReadFile("../event_file.json")
+func TestS3Upload(t *testing.T) {
+	t.Run("upload", func(t *testing.T) {
+		tmpfile, _ := ioutil.TempFile("/tmp", "srctmp_")
+		defer os.Remove(tmpfile.Name())
+		err := s3Upload(tmpfile)
 		if err != nil {
-			t.Fatal("Error failed to event file load")
+			t.Fatal("Error failed to s3upload")
 		}
-		var event events.S3Event
-		json.Unmarshal(raw, &event)
-		err = handler(context.Background(), event)
-		if err != nil {
-			t.Fatal("Error failed to s3 event")
-		}
-		println("Test handler...")
+
+		// TODO assert equalsを書く
+
+		fmt.Println("Test s3upload...")
 	})
 }
 
-func TestS3Download(t *testing.T) {
-	t.Run("s3 download test", func(t *testing.T) {
-		tmpFile, err := s3Download("bucket-example", "example.json.gz")
+func TestCompress(t *testing.T) {
+	t.Run("compress", func(t *testing.T) {
+		data := []SampleConvertData{
+			{12345678, "abcdefgh", time.Now().String()},
+			{23456781, "bcdefgha", time.Now().String()}}
+		_, err := compress(data)
 		if err != nil {
-			t.Fatal("Error failed to s3 download")
+			t.Fatal("Error failed to compress")
 		}
-		if tmpFile.Name() == "" {
-			t.Errorf("got: %v\nwant: %v", "", "/tmp/srctmp_*********")
-		}
-		println("Test s3Download...")
-	})
-}
 
-func TestExtract(t *testing.T) {
-	t.Run("extract", func(t *testing.T) {
-		file, _ := os.Open("../example.json.gz")
-		defer file.Close()
-		actual, err := extract(file)
-		if err != nil {
-			t.Fatal("Error failed to extract")
-		}
-		expected := "abcdefgh"
-		if actual[0].Value != expected {
-			t.Errorf("got: %v\nwant: %v", actual[0].Value, expected)
-		}
-		println("Test extract...")
+		// TODO ここのtestは誰かに相談する
+		fmt.Println("Test compress...")
 	})
 }
 
@@ -135,21 +138,51 @@ func TestConvert(t *testing.T) {
 			t.Errorf("got: %v\nwant: %v", convertData[0].Time, expected)
 		}
 
-		println("Test convert...")
+		fmt.Println("Test convert...")
 	})
 }
 
-func TestCompress(t *testing.T) {
-	t.Run("compress", func(t *testing.T) {
-		data := []SampleConvertData{
-			{12345678, "abcdefgh", time.Now().String()},
-			{23456781, "bcdefgha", time.Now().String()}}
-		_, err := compress(data)
+func TestExtract(t *testing.T) {
+	t.Run("extract", func(t *testing.T) {
+		file, _ := os.Open("../example.json.gz")
+		defer file.Close()
+		actual, err := extract(file)
 		if err != nil {
-			t.Fatal("Error failed to compress")
+			t.Fatal("Error failed to extract")
 		}
+		expected := "abcdefgh"
+		if actual[0].Value != expected {
+			t.Errorf("got: %v\nwant: %v", actual[0].Value, expected)
+		}
+		fmt.Println("Test extract...")
+	})
+}
 
-		// ここのtestは誰かに相談する
-		println("Test compress...")
+func TestS3Download(t *testing.T) {
+	t.Run("s3 download test", func(t *testing.T) {
+		tmpFile, err := s3Download("bucket-example", "example.json.gz")
+		if err != nil {
+			t.Fatal("Error failed to s3 download")
+		}
+		if tmpFile.Name() == "" {
+			t.Errorf("got: %v\nwant: %v", "", "/tmp/srctmp_*********")
+		}
+		fmt.Println("Test s3Download...")
+	})
+}
+
+func TestHandler(t *testing.T) {
+	t.Run("handler input test", func(t *testing.T) {
+		raw, err := ioutil.ReadFile("../event_file.json")
+		if err != nil {
+			t.Fatal("Error failed to event file load")
+		}
+		var event events.S3Event
+		json.Unmarshal(raw, &event)
+		err = handler(context.Background(), event)
+		if err != nil {
+			t.Fatal("Error failed to s3 event")
+		}
+		fmt.Println("Test handler...")
 	})
 }
