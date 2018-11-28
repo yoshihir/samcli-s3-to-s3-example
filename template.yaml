@@ -48,4 +48,7 @@ Resources:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: "bucket-example"
-
+  TestBucketConvert:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: "bucket-example-convert"
