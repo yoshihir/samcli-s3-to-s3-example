@@ -23,7 +23,7 @@ go test
 TODO: 環境変数が取れなくてlocal testが失敗する。testのshellかmakefileに書く
 ```shell
 make build
-sam local invoke MainFunction --event event_file.json
+sam local invoke MainFunction --event event_file.json --docker-network e6f99ef18d56
 ```
 
 ### templateテスト & package & deploy

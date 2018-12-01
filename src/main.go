@@ -28,10 +28,13 @@ type SampleConvertData struct {
 }
 
 func s3Upload(file *os.File) (*s3manager.UploadOutput, error) {
+	region := os.Getenv("REGION")
+	endpoint := os.Getenv("S3_ENDPOINT")
+
 	var sess = session.Must(session.NewSession(&aws.Config{
 		S3ForcePathStyle: aws.Bool(true),
-		Region:           aws.String(os.Getenv("REGION")),
-		Endpoint:         aws.String(os.Getenv("S3_ENDPOINT")),
+		Region:           aws.String(region),
+		Endpoint:         aws.String(endpoint),
 	}))
 
 	var uploader = s3manager.NewUploader(sess)
@@ -93,10 +96,12 @@ func extract(file *os.File) ([]SampleData, error) {
 }
 
 func s3Download(bucket string, key string) (f *os.File, err error) {
+	region := os.Getenv("REGION")
+	endpoint := os.Getenv("S3_ENDPOINT")
 	var sess = session.Must(session.NewSession(&aws.Config{
 		S3ForcePathStyle: aws.Bool(true),
-		Region:           aws.String(os.Getenv("REGION")),
-		Endpoint:         aws.String(os.Getenv("S3_ENDPOINT")),
+		Region:           aws.String(region),
+		Endpoint:         aws.String(endpoint),
 	}))
 
 	tmpfile, _ := ioutil.TempFile("/tmp", "srctmp_")
@@ -132,6 +137,7 @@ func handler(ctx context.Context, req events.S3Event) error {
 	gzFile, err := compress(convertData)
 	_, err = s3Upload(gzFile)
 
+	fmt.Println("Success!!")
 	return nil
 }
 

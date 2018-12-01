@@ -4,7 +4,7 @@ deps:
 	go get -u ./...
 
 clean: 
-	rm -rf ./main/main
+	rm -rf ./src/main
 	
 build:
 	GOOS=linux GOARCH=amd64 go build -o src/main ./src
