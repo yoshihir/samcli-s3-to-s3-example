@@ -29,12 +29,17 @@ type SampleConvertData struct {
 	Time  string `json:"time"`
 }
 
-func s3Upload(buf bytes.Buffer) (*s3manager.UploadOutput, error) {
+func createSession() *session.Session {
 	var sess = session.Must(session.NewSession(&aws.Config{
 		S3ForcePathStyle: aws.Bool(true),
 		Region:           aws.String(os.Getenv("REGION")),
 		Endpoint:         aws.String(os.Getenv("S3_ENDPOINT")),
 	}))
+	return sess
+}
+
+func s3Upload(buf bytes.Buffer) (*s3manager.UploadOutput, error) {
+	sess := createSession()
 
 	var uploader = s3manager.NewUploader(sess)
 
@@ -90,11 +95,7 @@ func extract(file *os.File) ([]SampleData, error) {
 }
 
 func s3Download(bucket string, key string) (f *os.File, err error) {
-	var sess = session.Must(session.NewSession(&aws.Config{
-		S3ForcePathStyle: aws.Bool(true),
-		Region:           aws.String(os.Getenv("REGION")),
-		Endpoint:         aws.String(os.Getenv("S3_ENDPOINT")),
-	}))
+	sess := createSession()
 
 	tmpFile, _ := ioutil.TempFile("/tmp", "srctmp_")
 	defer os.Remove(tmpFile.Name())
