@@ -30,20 +30,16 @@ type SampleConvertData struct {
 }
 
 func s3Upload(buf bytes.Buffer) (*s3manager.UploadOutput, error) {
-	region := os.Getenv("REGION")
-	endpoint := os.Getenv("S3_ENDPOINT")
-
 	var sess = session.Must(session.NewSession(&aws.Config{
 		S3ForcePathStyle: aws.Bool(true),
-		Region:           aws.String(region),
-		Endpoint:         aws.String(endpoint),
+		Region:           aws.String(os.Getenv("REGION")),
+		Endpoint:         aws.String(os.Getenv("S3_ENDPOINT")),
 	}))
 
 	var uploader = s3manager.NewUploader(sess)
 
 	result, err := uploader.Upload(&s3manager.UploadInput{
-		// TODO: 検証環境のbucket名をbucket-example-convert-stagingに変えたいので、環境変数から取れるようにする
-		Bucket: aws.String("bucket-example-convert-staging"),
+		Bucket: aws.String(os.Getenv("TARGET_S3")),
 		Key:    aws.String("example-convert.json.gz"),
 		Body:   bytes.NewReader(buf.Bytes()),
 	})
@@ -57,7 +53,6 @@ func s3Upload(buf bytes.Buffer) (*s3manager.UploadOutput, error) {
 
 func compress(w io.Writer, convertData []SampleConvertData) error {
 	b, _ := json.Marshal(convertData)
-	// Write gzipped data to the client
 	gw, err := gzip.NewWriterLevel(w, gzip.BestCompression)
 	gw.Write(b)
 	defer gw.Close()
@@ -95,22 +90,19 @@ func extract(file *os.File) ([]SampleData, error) {
 }
 
 func s3Download(bucket string, key string) (f *os.File, err error) {
-	region := os.Getenv("REGION")
-	endpoint := os.Getenv("S3_ENDPOINT")
 	var sess = session.Must(session.NewSession(&aws.Config{
 		S3ForcePathStyle: aws.Bool(true),
-		Region:           aws.String(region),
-		Endpoint:         aws.String(endpoint),
+		Region:           aws.String(os.Getenv("REGION")),
+		Endpoint:         aws.String(os.Getenv("S3_ENDPOINT")),
 	}))
 
-	tmpfile, _ := ioutil.TempFile("/tmp", "srctmp_")
-	defer os.Remove(tmpfile.Name())
+	tmpFile, _ := ioutil.TempFile("/tmp", "srctmp_")
+	defer os.Remove(tmpFile.Name())
 
-	// ダウンロード処理
 	var downloader = s3manager.NewDownloader(sess)
 
 	_, err = downloader.Download(
-		tmpfile,
+		tmpFile,
 		&s3.GetObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    aws.String(key),
@@ -119,7 +111,7 @@ func s3Download(bucket string, key string) (f *os.File, err error) {
 		fmt.Println("file download error")
 	}
 
-	return tmpfile, err
+	return tmpFile, err
 }
 
 func handler(ctx context.Context, req events.S3Event) error {
@@ -131,8 +123,8 @@ func handler(ctx context.Context, req events.S3Event) error {
 		return err
 	}
 	data, err := extract(file)
-	time := time.Now().String()
-	convertData, err := convert(data, time)
+	timeNow := time.Now().String()
+	convertData, err := convert(data, timeNow)
 	var buf bytes.Buffer
 	err = compress(&buf, convertData)
 	if err != nil {
@@ -140,8 +132,6 @@ func handler(ctx context.Context, req events.S3Event) error {
 		return err
 	}
 	_, err = s3Upload(buf)
-
-	fmt.Println("Success!!")
 	return nil
 }
 

@@ -10,11 +10,6 @@ Globals:
   Function:
     Timeout: 5
 
-#Parameters:
-#  BucketNameParameter:
-#    Description: Name of S3 bucket
-#    Type: String
-#    BuketName: aaaaaaaa
 
 Resources:
   MainFunction:
@@ -28,9 +23,6 @@ Resources:
         An Amazon S3 trigger that retrieves metadata for the object that has
         been updated.
       MemorySize: 128
-#      Policies:
-#      - S3CrudPolicy:
-#          BucketName: !Ref BucketNameParameter
       Events:
         S3Event:
           Type: S3
@@ -42,6 +34,7 @@ Resources:
         Variables:
           REGION: "ap-northeast-1"
           S3_ENDPOINT: "http://localstack:4572"
+          TARGET_S3: "bucket-example-convert"
 
 
   TestBucket:

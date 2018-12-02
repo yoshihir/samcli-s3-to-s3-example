@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -23,6 +24,7 @@ func TestMain(m *testing.M) {
 
 	os.Setenv("REGION", "ap-northeast-1")
 	os.Setenv("S3_ENDPOINT", "http://localhost:4572")
+	os.Setenv("TARGET_S3", "bucket-example-convert")
 
 	var sess = session.Must(session.NewSession(&aws.Config{
 		S3ForcePathStyle: aws.Bool(true),
@@ -37,38 +39,36 @@ func TestMain(m *testing.M) {
 	})
 
 	if err != nil {
-		//if aerr, ok := err.(awserr.Error); ok {
-		//	switch aerr.Code() {
-		//	case s3.ErrCodeBucketAlreadyExists:
-		//		fmt.Println(s3.ErrCodeBucketAlreadyExists, aerr.Error())
-		//	case s3.ErrCodeBucketAlreadyOwnedByYou:
-		//		fmt.Println(s3.ErrCodeBucketAlreadyOwnedByYou, aerr.Error())
-		//	default:
-		//		fmt.Println(aerr.Error())
-		//	}
-		//} else {
-		//	fmt.Println(err.Error())
-		//}
-		//return
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case s3.ErrCodeBucketAlreadyExists:
+				fmt.Println(s3.ErrCodeBucketAlreadyExists, aerr.Error())
+			case s3.ErrCodeBucketAlreadyOwnedByYou:
+				fmt.Println(s3.ErrCodeBucketAlreadyOwnedByYou, aerr.Error())
+			default:
+				fmt.Println(aerr.Error())
+			}
+		} else {
+			fmt.Println(err.Error())
+		}
 	}
 	_, err = creater.CreateBucket(&s3.CreateBucketInput{
 		Bucket: aws.String("bucket-example-convert"),
 	})
 
 	if err != nil {
-		//if aerr, ok := err.(awserr.Error); ok {
-		//	switch aerr.Code() {
-		//	case s3.ErrCodeBucketAlreadyExists:
-		//		fmt.Println(s3.ErrCodeBucketAlreadyExists, aerr.Error())
-		//	case s3.ErrCodeBucketAlreadyOwnedByYou:
-		//		fmt.Println(s3.ErrCodeBucketAlreadyOwnedByYou, aerr.Error())
-		//	default:
-		//		fmt.Println(aerr.Error())
-		//	}
-		//} else {
-		//	fmt.Println(err.Error())
-		//}
-		//return
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case s3.ErrCodeBucketAlreadyExists:
+				fmt.Println(s3.ErrCodeBucketAlreadyExists, aerr.Error())
+			case s3.ErrCodeBucketAlreadyOwnedByYou:
+				fmt.Println(s3.ErrCodeBucketAlreadyOwnedByYou, aerr.Error())
+			default:
+				fmt.Println(aerr.Error())
+			}
+		} else {
+			fmt.Println(err.Error())
+		}
 	}
 
 	up, err := os.Open("../example.json.gz")
@@ -106,7 +106,6 @@ func TestS3Upload(t *testing.T) {
 		if result.Location == "" {
 			t.Errorf("got: %v\nwant: %v", result.UploadID, "")
 		}
-
 		fmt.Println("Test s3upload...")
 	})
 }
@@ -122,7 +121,10 @@ func TestCompress(t *testing.T) {
 		if err != nil {
 			t.Fatal("Error failed to compress")
 		}
-		// TODO ここのtestは誰かに相談する
+		if len(buf.Bytes()) == 0 {
+			t.Fatal("Error failed to compress")
+			t.Errorf("got: %v\nwant: %v", buf.Bytes(), 0)
+		}
 		fmt.Println("Test compress...")
 	})
 }
@@ -139,7 +141,6 @@ func TestConvert(t *testing.T) {
 		if convertData[0].Time != expected {
 			t.Errorf("got: %v\nwant: %v", convertData[0].Time, expected)
 		}
-
 		fmt.Println("Test convert...")
 	})
 }

@@ -37,6 +37,9 @@ Resources:
             Bucket: !Ref TestBucket
             Events:
             - 's3:ObjectCreated:Put'
+      Environment:
+        Variables:
+          TARGET_S3: "bucket-example-convert-staging"
 
   TestBucket:
     Type: 'AWS::S3::Bucket'
