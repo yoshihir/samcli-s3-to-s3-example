@@ -19,8 +19,6 @@ go test
 ```
 
 ### build & 結合テスト
-
-TODO: 環境変数が取れなくてlocal testが失敗する。testのshellかmakefileに書く
 ```shell
 make build
 sam local invoke MainFunction --event event_file.json --template ./template/local.yaml --docker-network e6f99ef18d56
