@@ -15,9 +15,9 @@ Resources:
   MainFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/main
+      Handler: main
       Runtime: go1.x
-      CodeUri: .
+      CodeUri: ../src
       FunctionName: main
       Description: >-
         An Amazon S3 trigger that retrieves metadata for the object that has

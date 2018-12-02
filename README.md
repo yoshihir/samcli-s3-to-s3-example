@@ -23,15 +23,15 @@ go test
 TODO: 環境変数が取れなくてlocal testが失敗する。testのshellかmakefileに書く
 ```shell
 make build
-sam local invoke MainFunction --event event_file.json --docker-network e6f99ef18d56
+sam local invoke MainFunction --event event_file.json --template ./template/local.yaml --docker-network e6f99ef18d56
 ```
 
 ### templateテスト & package & deploy
 package-bucketは別途作成要
 
 ```shell
-sam validate
-sam package --template-file ./deploy/staging.yaml --s3-bucket package-bucket-example --output-template-file packaged.yaml
+sam validate --template ./template/local.yaml
+sam package --template-file ./template/staging.yaml --s3-bucket package-bucket-example --output-template-file packaged.yaml
 sam deploy --template-file packaged.yaml --stack-name sam-cli-example --capabilities CAPABILITY_IAM
 ```
 

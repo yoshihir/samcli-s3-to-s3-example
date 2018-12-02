@@ -8,3 +8,6 @@ clean:
 	
 build:
 	GOOS=linux GOARCH=amd64 go build -o src/main ./src
+
+test-unit: build
+	go test ./src/

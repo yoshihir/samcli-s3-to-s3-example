@@ -124,8 +124,16 @@ func handler(ctx context.Context, req events.S3Event) error {
 		return err
 	}
 	data, err := extract(file)
+	if err != nil {
+		fmt.Println("Error failed to extract")
+		return err
+	}
 	timeNow := time.Now().String()
 	convertData, err := convert(data, timeNow)
+	if err != nil {
+		fmt.Println("Error failed to convert")
+		return err
+	}
 	var buf bytes.Buffer
 	err = compress(&buf, convertData)
 	if err != nil {
@@ -133,6 +141,10 @@ func handler(ctx context.Context, req events.S3Event) error {
 		return err
 	}
 	_, err = s3Upload(buf)
+	if err != nil {
+		fmt.Println("Error failed to s3 upload")
+		return err
+	}
 	return nil
 }
 
