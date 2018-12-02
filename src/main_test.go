@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"encoding/json"
@@ -97,9 +98,8 @@ func TestMain(m *testing.M) {
 
 func TestS3Upload(t *testing.T) {
 	t.Run("upload", func(t *testing.T) {
-		tmpfile, _ := ioutil.TempFile("/tmp", "srctmp_")
-		defer os.Remove(tmpfile.Name())
-		result, err := s3Upload(tmpfile)
+		var buf bytes.Buffer
+		result, err := s3Upload(buf)
 		if err != nil {
 			t.Fatal("Error failed to s3upload")
 		}
@@ -116,11 +116,12 @@ func TestCompress(t *testing.T) {
 		data := []SampleConvertData{
 			{12345678, "abcdefgh", time.Now().String()},
 			{23456781, "bcdefgha", time.Now().String()}}
-		_, err := compress(data)
+
+		var buf bytes.Buffer
+		err := compress(&buf, data)
 		if err != nil {
 			t.Fatal("Error failed to compress")
 		}
-
 		// TODO ここのtestは誰かに相談する
 		fmt.Println("Test compress...")
 	})

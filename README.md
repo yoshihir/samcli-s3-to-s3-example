@@ -28,10 +28,11 @@ sam local invoke MainFunction --event event_file.json --docker-network e6f99ef18
 
 ### templateテスト & package & deploy
 package-bucketは別途作成要
+
 ```shell
 sam validate
-sam package --template-file template.yaml --s3-bucket package-bucket --output-template-file packaged.yaml
-sam deploy --template-file packaged.yaml --stack-name test-sam-cli --capabilities CAPABILITY_IAM
+sam package --template-file ./deploy/staging.yaml --s3-bucket package-bucket-example --output-template-file packaged.yaml
+sam deploy --template-file packaged.yaml --stack-name sam-cli-example --capabilities CAPABILITY_IAM
 ```
 
 ### 知っておいたほうが良いかも

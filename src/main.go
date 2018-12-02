@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"encoding/json"
@@ -11,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"io"
 	"io/ioutil"
 	"os"
 	"time"
@@ -27,7 +29,7 @@ type SampleConvertData struct {
 	Time  string `json:"time"`
 }
 
-func s3Upload(file *os.File) (*s3manager.UploadOutput, error) {
+func s3Upload(buf bytes.Buffer) (*s3manager.UploadOutput, error) {
 	region := os.Getenv("REGION")
 	endpoint := os.Getenv("S3_ENDPOINT")
 
@@ -40,9 +42,10 @@ func s3Upload(file *os.File) (*s3manager.UploadOutput, error) {
 	var uploader = s3manager.NewUploader(sess)
 
 	result, err := uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String("bucket-example-convert"),
+		// TODO: 検証環境のbucket名をbucket-example-convert-stagingに変えたいので、環境変数から取れるようにする
+		Bucket: aws.String("bucket-example-convert-staging"),
 		Key:    aws.String("example-convert.json.gz"),
-		Body:   file,
+		Body:   bytes.NewReader(buf.Bytes()),
 	})
 	if err != nil {
 		fmt.Println("failed to upload file")
@@ -52,17 +55,13 @@ func s3Upload(file *os.File) (*s3manager.UploadOutput, error) {
 	return result, err
 }
 
-func compress(convertData []SampleConvertData) (*os.File, error) {
+func compress(w io.Writer, convertData []SampleConvertData) error {
 	b, _ := json.Marshal(convertData)
-
-	tmpfile, _ := ioutil.TempFile("/tmp", "srctmp_")
-	defer os.Remove(tmpfile.Name())
-
-	writer := gzip.NewWriter(tmpfile)
-	writer.Write([]byte(b))
-	writer.Close()
-
-	return tmpfile, nil
+	// Write gzipped data to the client
+	gw, err := gzip.NewWriterLevel(w, gzip.BestCompression)
+	gw.Write(b)
+	defer gw.Close()
+	return err
 }
 
 func convert(data []SampleData, time string) ([]SampleConvertData, error) {
@@ -134,8 +133,13 @@ func handler(ctx context.Context, req events.S3Event) error {
 	data, err := extract(file)
 	time := time.Now().String()
 	convertData, err := convert(data, time)
-	gzFile, err := compress(convertData)
-	_, err = s3Upload(gzFile)
+	var buf bytes.Buffer
+	err = compress(&buf, convertData)
+	if err != nil {
+		fmt.Println("Error failed compress")
+		return err
+	}
+	_, err = s3Upload(buf)
 
 	fmt.Println("Success!!")
 	return nil
