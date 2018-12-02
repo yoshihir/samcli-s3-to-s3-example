@@ -71,7 +71,7 @@ func TestMain(m *testing.M) {
 		}
 	}
 
-	up, err := os.Open("../example.json.gz")
+	up, err := os.Open("./testdata/example.json.gz")
 	if err != nil {
 		fmt.Println("failed to open file")
 		return
@@ -147,7 +147,7 @@ func TestConvert(t *testing.T) {
 
 func TestExtract(t *testing.T) {
 	t.Run("extract", func(t *testing.T) {
-		file, _ := os.Open("../example.json.gz")
+		file, _ := os.Open("./testdata/example.json.gz")
 		defer file.Close()
 		actual, err := extract(file)
 		if err != nil {
