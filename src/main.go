@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -49,8 +50,7 @@ func s3Upload(buf bytes.Buffer) (*s3manager.UploadOutput, error) {
 		Body:   bytes.NewReader(buf.Bytes()),
 	})
 	if err != nil {
-		fmt.Println("failed to upload file")
-		return nil, err
+		return nil, errors.Wrap(err, "failed to upload file")
 	}
 
 	return result, err
@@ -109,7 +109,7 @@ func s3Download(bucket string, key string) (f *os.File, err error) {
 			Key:    aws.String(key),
 		})
 	if err != nil {
-		fmt.Println("file download error")
+		return nil, errors.Wrap(err, "file download error")
 	}
 
 	return tmpFile, err
@@ -120,31 +120,27 @@ func handler(ctx context.Context, req events.S3Event) error {
 	key := req.Records[0].S3.Object.Key
 	file, err := s3Download(bucketName, key)
 	if err != nil {
-		fmt.Println("Error failed to s3 download")
-		return err
+		return errors.Wrap(err, "Error failed to s3 download")
 	}
 	data, err := extract(file)
 	if err != nil {
-		fmt.Println("Error failed to extract")
-		return err
+		return errors.Wrap(err, "Error failed to extract")
 	}
 	timeNow := time.Now().String()
 	convertData, err := convert(data, timeNow)
 	if err != nil {
-		fmt.Println("Error failed to convert")
-		return err
+		return errors.Wrap(err, "Error failed to convert")
 	}
 	var buf bytes.Buffer
 	err = compress(&buf, convertData)
 	if err != nil {
-		fmt.Println("Error failed compress")
-		return err
+		return errors.Wrap(err, "Error failed compress")
 	}
 	_, err = s3Upload(buf)
 	if err != nil {
-		fmt.Println("Error failed to s3 upload")
-		return err
+		return errors.Wrap(err, "Error failed to s3 upload")
 	}
+
 	return nil
 }
 
