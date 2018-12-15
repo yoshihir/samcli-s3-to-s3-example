@@ -14,7 +14,7 @@ build:
 integration-testing: build
 	docker-compose -p $(PROJECT_NAME) down
 	env TMPDIR=/private$TMPDIR docker-compose -p $(PROJECT_NAME) up -d
-	sleep 10s
+	sleep 5s
 	aws --endpoint-url=http://localhost:4572 s3 mb s3://bucket-example
 	aws --endpoint-url=http://localhost:4572 s3 mb s3://bucket-example-convert
 	aws --endpoint-url=http://localhost:4572 s3 cp ./testdata/example.json.gz s3://bucket-example/example.json.gz
